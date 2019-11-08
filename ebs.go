@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"fmt"
 	"strings"
 
@@ -43,15 +44,17 @@ func getEBSTags(annotation string) []*ec2.Tag {
 }
 
 func createTags(volume *string, tags []*ec2.Tag) error {
-
-	sess := session.New(&aws.Config{Region: aws.String(getRegion())})
+	sess, err := session.NewSession(&aws.Config{Region: aws.String(getRegion())})
+	if err != nil {
+		return fmt.Errorf("Error getting AWS session while creating ebs tags: %v", err)
+	}
 	ec2Client := ec2.New(sess)
 
 	input := &ec2.CreateTagsInput{
 		Resources: []*string{volume},
 		Tags:      tags,
 	}
-	_, err := ec2Client.CreateTags(input)
+	_, err = ec2Client.CreateTags(input)
 	if err != nil {
 		return fmt.Errorf("failed to create ebs tags: %v", err)
 	}
@@ -59,10 +62,17 @@ func createTags(volume *string, tags []*ec2.Tag) error {
 }
 
 func getRegion() string {
-	var region string
-	svc := ec2metadata.New(session.New())
-	if r, err := svc.Region(); err == nil {
-		region = r
+	region, present := os.LookupEnv("AWS_REGION")
+	if !present {
+		sess, err := session.NewSession()
+		if err != nil {
+			klog.Errorf("Error getting AWS session while retrieving region: %v", err)
+		} else {
+			svc := ec2metadata.New(sess)
+			if r, err := svc.Region(); err == nil {
+				region = r
+			}
+		}
 	}
 	return region
 }
