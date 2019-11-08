@@ -137,6 +137,5 @@ In `deployment/install.yaml` kube2iam annotation `iam.amazonaws.com/role: Kubern
 To build `k8s-metadata-injector` as a docker container:
 
 ```bash
-docker build -t abdullahalmariah/k8s-metadata-injector:latest .
-docker push abdullahalmariah/k8s-metadata-injector:latest
+docker build -t k8s-metadata-injector .
 ```
